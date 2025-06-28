@@ -1,9 +1,16 @@
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-const path = require("path");
-const ProductSuggestion = require("../models/suggestion");
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import ProductSuggestion from "../models/suggestion.js"; // ✅ Make sure your model uses `export default`
 
+// __dirname workaround for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env variables
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
 
 const suggestions = [
   { name: "Headphones" },
@@ -18,22 +25,22 @@ const suggestions = [
   { name: "Webcam" }
 ];
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(async () => {
+async function seedSuggestions() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ Connected to MongoDB");
 
-    // Clear old suggestions
     await ProductSuggestion.deleteMany({});
     console.log("🧹 Cleared old suggestions");
 
-    // Insert new ones
     await ProductSuggestion.insertMany(suggestions);
     console.log("✅ Seeded product suggestions");
 
     process.exit();
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error("❌ Error seeding data:", err.message);
     process.exit(1);
-  });
+  }
+}
+
+seedSuggestions();
