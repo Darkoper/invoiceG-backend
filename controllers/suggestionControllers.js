@@ -1,29 +1,46 @@
-const Suggestion = require("../models/suggestion");
+const mongoose = require("mongoose");
+const Suggestion = require("../models/suggestion.model");
 
-exports.getSuggestions = async (req, res) => {
-  const { q, userId } = req.query;
-  if (!q) return res.json([]);
+const getSuggestions = async (req, res) => {
+  try {
+    const { q, userId } = req.query;
+    const regex = new RegExp(q, "i");
 
-  const regex = new RegExp(`^${q}`, "i");
+    const suggestions = await Suggestion.find({
+      name: { $regex: regex },
+      $or: [
+        { userId: userId },       // personal suggestions
+        { userId: null },         // public ones
+      ],
+    }).limit(10);
 
-  const results = await Suggestion.find({
-    name: regex,
-    $or: [{ createdBy: null }, { createdBy: userId }],
-  })
-    .sort({ createdAt: -1 })
-    .limit(10);
-
-  res.json(results);
+    res.json(suggestions);
+  } catch (error) {
+    console.error("Failed to fetch suggestions", error);
+    res.status(500).json({ error: "Server error" });
+  }
 };
 
-exports.addSuggestion = async (req, res) => {
-  const { name, userId } = req.body;
+const addSuggestion = async (req, res) => {
+  try {
+    const { name, userId } = req.body;
 
-  const existing = await Suggestion.findOne({ name, createdBy: userId });
-  if (existing) return res.status(200).json(existing);
+    if (!name || !userId) {
+      return res.status(400).json({ error: "name and userId are required" });
+    }
 
-  const newItem = new Suggestion({ name, createdBy: userId });
-  await newItem.save();
+    const existing = await Suggestion.findOne({ name, userId });
+    if (existing) return res.status(200).json(existing);
 
-  res.status(201).json(newItem);
+    const newSuggestion = new Suggestion({ name, userId });
+    await newSuggestion.save();
+
+    res.status(201).json(newSuggestion);
+  } catch (error) {
+    console.error("Failed to add suggestion", error);
+    res.status(500).json({ error: "Server error" });
+  }
 };
+
+
+module.exports = { getSuggestions, addSuggestion };
