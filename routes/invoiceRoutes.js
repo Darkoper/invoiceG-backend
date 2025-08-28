@@ -3,7 +3,25 @@ const router = express.Router();
 const Invoice = require("../models/Invoice");
 const auth = require("../middleware/authMiddleware");
 
-// POST: Create a new invoice (Protected)
+// PUT: Update an invoice by ID (Protected)
+router.put("/:id", auth, async (req, res) => {
+  try {
+    const invoiceId = req.params.id;
+    // Only allow update if invoice belongs to the user
+    const invoice = await Invoice.findOne({ _id: invoiceId, userId: req.user.userId });
+    if (!invoice) {
+      return res.status(404).json({ error: "Invoice not found" });
+    }
+
+    // Update fields
+    Object.assign(invoice, req.body);
+    await invoice.save();
+    res.status(200).json(invoice);
+  } catch (err) {
+    console.error("❌ Error updating invoice:", err);
+    res.status(400).json({ error: "Failed to update invoice" });
+  }
+});
 // POST: Create a new invoice (Protected)
 router.post("/", auth, async (req, res) => {
   try {
@@ -13,6 +31,7 @@ router.post("/", auth, async (req, res) => {
       businessAddress,
       cityRegion,
       representativeName,
+      department,
       invoiceNumber,
       date,
       clientDetails,
@@ -34,6 +53,7 @@ router.post("/", auth, async (req, res) => {
       businessAddress,
       cityRegion,
       representativeName,
+      department,
       invoiceNumber,
       date,
       clientDetails,
@@ -67,6 +87,20 @@ router.get("/", auth, async (req, res) => {
   } catch (err) {
     console.error("❌ Error fetching invoices:", err);
     res.status(500).json({ error: "Failed to fetch invoices" });
+  }
+});
+
+// GET: Fetch a single invoice by ID (Protected)
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user.userId });
+    if (!invoice) {
+      return res.status(404).json({ error: "Invoice not found" });
+    }
+    res.status(200).json(invoice);
+  } catch (err) {
+    console.error("❌ Error fetching invoice by ID:", err);
+    res.status(500).json({ error: "Failed to fetch invoice" });
   }
 });
 

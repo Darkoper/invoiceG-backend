@@ -7,6 +7,7 @@ const invoiceSchema = new mongoose.Schema({
   businessAddress: String,
   cityRegion: String,
   representativeName: String,
+  department: String,
 
   // Invoice Details
   invoiceNumber: String,
