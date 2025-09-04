@@ -12,7 +12,9 @@ connectDB();
 
 // ✅ Middleware setup
 app.use(cors({
-  origin: "http://localhost:5173", // frontend URL
+  origin: process.env.NODE_ENV === "production" 
+    ? "http://localhost:5173"
+    : ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
   credentials: true,               // allow cookies
 }));
 app.use(express.json());
